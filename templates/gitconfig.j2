@@ -1,0 +1,13 @@
+# {{ ansible_managed }}
+
+{% if include is defined %}
+[include]
+{% for file in include %}
+    path = .gitconfig.d/{{ file }}.conf
+{% endfor %}{% endif %}
+{% if data is defined %}{% for key in data %}
+[{{ key }}]
+{% for opt in data[key] %}
+    {{ opt }} = {{ data[key][opt] }}
+{% endfor %}
+{% endfor %}{% endif %}

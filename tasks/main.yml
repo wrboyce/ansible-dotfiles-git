@@ -1,0 +1,29 @@
+---
+- name: create git config dir
+  file: path="{{ user_home }}/.gitconfig.d" state=directory
+  tags: [git, config, dotfiles]
+
+- name: create git configs
+  template: src=gitconfig.j2 dest="{{ user_home }}/.gitconfig.d/{{ item }}.conf"
+  vars:
+    data: "{{ hostvars[inventory_hostname]['gitconfig_' + item] }}"
+  with_items:
+  - "{{ git_configs }}"
+  tags: [git, config, dotfiles]
+
+- name: discover git config files
+  shell: ls -1 {{ user_home }}/.gitconfig.d/*.conf | sed -e 's/.*\///' -e 's/\.conf//'
+  register: active_configs
+  tags: [git, config, dotfiles]
+
+- name: remove unmanaged git config files
+  file: path="{{ item }}" state=absent
+  when: not ansible_check_mode and item not in git_configs
+  with_items: "{{ active_configs.stdout_lines }}"
+  tags: [git, config, dotfiles]
+
+- name: copy main git config
+  template: src=gitconfig.j2 dest="{{ user_home }}/.gitconfig"
+  vars:
+    include: "{{ git_configs }}"
+  tags: [git, config, dotfiles]
